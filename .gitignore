@@ -17,6 +17,12 @@ __pycache__/
 node_modules/
 dist/
 *.local
+.pnpm-store/
+# 规范工具是 pnpm（pnpm-lock.yaml）；package-lock 是沙箱无 symlink 时的 npm 副产物
+frontend/package-lock.json
+
+# ---- WorkBuddy 会话状态（本机用，不进仓库）----
+.workbuddy/
 
 # ---- 编辑器 / 系统 ----
 .idea/

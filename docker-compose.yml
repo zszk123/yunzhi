@@ -1,0 +1,88 @@
+# yunzhi 基础设施四件套：PG17(pgvector) / Qdrant / Redis / MinIO
+# 应用（backend uvicorn / frontend vite）本地跑，不在本文件内（迭代 5 再容器化）
+name: yunzhi-infra
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: yunzhi-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-yunzhi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-yunzhi}
+      POSTGRES_DB: ${POSTGRES_DB:-yunzhi}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  qdrant:
+    image: qdrant/qdrant:v1.13.0
+    container_name: yunzhi-qdrant
+    ports:
+      - "${QDRANT_PORT:-6333}:6333"
+    volumes:
+      - qdrantdata:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c ':> /dev/tcp/localhost/6333' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    container_name: yunzhi-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  minio:
+    # 用 quay.io 官方源：docker.io/minio/minio 被国内镜像站 403
+    image: quay.io/minio/minio:latest
+    container_name: yunzhi-minio
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "mc alias set local http://localhost:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD} >/dev/null 2>&1 && mc ready local"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # 一次性初始化容器：自动建 bucket，不用手点控制台
+  minio-init:
+    image: quay.io/minio/mc:latest
+    container_name: yunzhi-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 $${MINIO_ROOT_USER:-minioadmin} $${MINIO_ROOT_PASSWORD:-minioadmin};
+      mc mb --ignore-existing local/$${MINIO_BUCKET:-yunzhi-files};
+      echo 'bucket ready: '$${MINIO_BUCKET:-yunzhi-files};
+      "
+    restart: "no"
+
+volumes:
+  pgdata:
+  qdrantdata:
+  redisdata:
+  miniodata:

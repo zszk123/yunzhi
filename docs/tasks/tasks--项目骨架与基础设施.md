@@ -39,21 +39,21 @@
 - **内容**：PG（pgvector/pgvector:pg17）/ Qdrant / Redis 7 / MinIO，全部配 healthcheck；MinIO 附初始化容器自动建 `yunzhi-files` bucket；数据卷命名持久化
 - **验证**：`docker compose up -d` 后 `docker compose ps` 四个服务全部 healthy；MinIO 控制台（:9001）可登录且 bucket 已存在；PG 内 `CREATE EXTENSION vector;` 可用
 
-### T7. SQLAlchemy 模型（15 表）
+### T7. SQLAlchemy 模型（18 表）
 - **产出物**：`backend/app/models/`，按 schema.sql 五个模块分文件（user / kb / agent / session / audit）
 - **内容**：SQLAlchemy 2.0 Mapped 风格，逐表对齐 schema.sql 的字段、默认值、索引、外键级联；JSONB / TEXT[] / UUID 类型用对
 - **验证**：模型可 import 无错；与 schema.sql 逐表人工 diff 一致
 
 ### T8. [TDD] Alembic 初始化 + 首个迁移
 - **产出物**：`backend/alembic/`、env.py 从 settings 读连接串、首个迁移脚本
-- **内容**：迁移脚本由 models 自动生成后人工校对（对齐 15 表 + 全部索引）
-- **测试**：对临时库执行 upgrade head，断言 `\dt` 恰好 15 张表、关键索引存在
+- **内容**：迁移脚本由 models 自动生成后人工校对（对齐 18 表 + 全部索引）
+- **测试**：对临时库执行 upgrade head，断言 `\dt` 恰好 18 张表、关键索引存在
 - **验证**：测试全绿
 
 ### T9. 迁移可重复性验证
 - **产出物**：验证记录（写入 checklist）
 - **内容**：`upgrade head` → `downgrade base` → 再 `upgrade head`
-- **验证**：三段命令全程零报错；最终 15 表齐全
+- **验证**：三段命令全程零报错；最终 18 表齐全
 
 ### T10. frontend 骨架（Vite + React + TS + AntD）
 - **产出物**：`frontend/` 工程，含 eslint + prettier、`pnpm lint` 脚本、路由骨架

@@ -1,0 +1,45 @@
+[project]
+name = "yunzhi-backend"
+version = "0.1.0"
+description = "yunzhi AI domain: FastAPI + LangGraph service"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic-settings>=2.6",
+    "structlog>=24.4",
+    "sqlalchemy>=2.0.36",
+    "alembic>=1.14",
+    "psycopg[binary]>=3.2",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "httpx>=0.28",
+    "ruff>=0.8",
+    "pre-commit>=4.0",
+]
+
+[tool.pytest.ini_options]
+# 沙箱会拦截 pytest 清理 %TEMP% 下的 pytest-of-*，改放项目内
+addopts = "--basetemp=.pytest_tmp"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["app", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC", "SIM"]
+ignore = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+# alembic autogenerate 产物：模板风格（旧式 typing、超长行）不由我们控制，
+# 每次重新生成都会复原，lint 豁免；env.py 是手写代码，不在豁免内
+[tool.ruff.lint.per-file-ignores]
+"alembic/versions/*.py" = ["E501", "UP", "I001"]
