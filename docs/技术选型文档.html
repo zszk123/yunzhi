@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>技术选型文档 —— 知识库 + LangGraph Agent 系统</title>
+<style>
+  :root { --ink:#18181B; --muted:#52525B; --hint:#71717A; --line:#E4E4E7; --bg:#FFFFFF; --soft:#F8FAFC; --brand:#2563EB; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#F4F4F5; color:var(--ink); font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; font-size:14px; line-height:1.75; }
+  .page { max-width: 960px; margin: 32px auto; background: var(--bg); border:1px solid var(--line); border-radius:16px; padding: 48px 56px 56px; }
+  h1 { font-size:24px; font-weight:600; margin:0 0 8px; }
+  .meta { color:var(--hint); font-size:13px; border-bottom:1px solid var(--line); padding-bottom:20px; margin-bottom:8px; }
+  h2 { font-size:18px; font-weight:600; margin:40px 0 12px; padding-left:12px; border-left:4px solid var(--brand); }
+  h3 { font-size:15px; font-weight:600; margin:24px 0 8px; color:#27272A; }
+  p { margin:8px 0; color:#3F3F46; }
+  strong { color:var(--ink); }
+  table { width:100%; border-collapse:collapse; margin:12px 0 20px; font-size:13.5px; }
+  th, td { border:1px solid var(--line); padding:8px 12px; text-align:left; vertical-align:top; }
+  th { background:var(--soft); font-weight:600; color:#27272A; }
+  tr:nth-child(even) td { background:#FAFAFA; }
+  code { background:var(--soft); border:1px solid var(--line); border-radius:4px; padding:1px 6px; font-family:"Cascadia Code", Consolas, monospace; font-size:12.5px; color:#9D174D; }
+  pre { background:#0F172A; color:#E2E8F0; border-radius:10px; padding:16px 20px; overflow-x:auto; }
+  pre code { background:none; border:none; color:#E2E8F0; padding:0; font-size:12.5px; line-height:1.6; }
+  blockquote { margin:16px 0; padding:14px 20px; background:#EFF6FF; border-left:4px solid var(--brand); border-radius:0 10px 10px 0; color:#1E3A8A; }
+  .figure { border:1px solid var(--line); border-radius:14px; padding:16px; background:var(--soft); margin:16px 0 24px; }
+  .figure svg { width:100%; height:auto; display:block; }
+  .figure figcaption { text-align:center; color:var(--hint); font-size:12px; margin-top:10px; }
+  ol li, ul li { color:#3F3F46; margin:4px 0; }
+  .toc { background:var(--soft); border:1px solid var(--line); border-radius:12px; padding:16px 24px; font-size:13px; column-count:2; }
+  .toc a { color:var(--brand); text-decoration:none; }
+  .toc a:hover { text-decoration:underline; }
+  footer { margin-top:48px; border-top:1px solid var(--line); padding-top:16px; color:var(--hint); font-size:12px; text-align:center; }
+  @media print { body{background:#fff} .page{border:none; margin:0; max-width:100%} }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>技术选型文档 —— 知识库 + LangGraph Agent 系统</h1>
+<div class="meta">版本 v1.0 ｜ 日期 2026-09-20 ｜ 状态：已评审 ｜ 范围：语言 / AI 框架 / 管理系统形态 / 向量数据库 / 主数据库 / Skill 与 MCP / 落地路线</div>
+
+<nav class="toc">
+  <a href="#s1">1. 选型结论总览</a><br>
+  <a href="#s2">2. 总体架构</a><br>
+  <a href="#s3">3. 语言选型：Java + Python 双服务</a><br>
+  <a href="#s4">4. AI 框架：LangGraph + 多协议接入</a><br>
+  <a href="#s5">5. 管理系统：Spring Boot 模块化单体</a><br>
+  <a href="#s6">6. 向量数据库：Qdrant</a><br>
+  <a href="#s7">7. 主数据库：PostgreSQL</a><br>
+  <a href="#s8">8. Skill 与 MCP 设计</a><br>
+  <a href="#s9">9. 数据层与中间件清单</a><br>
+  <a href="#s10">10. 三阶段落地路线</a><br>
+  <a href="#s11">11. 风险与备选方案</a><br>
+  <a href="#sa">附录：面试话术 / 简历衔接</a>
+</nav>
+
+<h2 id="s1">1. 选型结论总览</h2>
+<table>
+  <tr><th style="width:140px">决策点</th><th>结论</th><th>一句话理由</th></tr>
+  <tr><td>语言</td><td><strong>Java + Python 双服务</strong></td><td>管理域用 Java 主场技能，AI 域用生态垄断的 Python</td></tr>
+  <tr><td>AI 框架</td><td><strong>LangGraph 骨架 + OpenAI 兼容协议 + Anthropic Provider</strong></td><td>编排层与模型 API 层是两层东西，不冲突</td></tr>
+  <tr><td>管理系统形态</td><td><strong>Spring Boot 模块化单体，不上 Spring Cloud</strong></td><td>1 人 2 个服务，拆微服务纯负成本</td></tr>
+  <tr><td>向量数据库</td><td><strong>Qdrant</strong></td><td>原生 sparse+dense+RRF 混合检索，轻部署，已有实战经验</td></tr>
+  <tr><td>主数据库</td><td><strong>PostgreSQL 17</strong></td><td>LangGraph 官方 checkpoint 后端 + JSONB + pgvector 生态位</td></tr>
+  <tr><td>Skill / MCP</td><td>知识库能力 MCP 工具化；Skill 由 Java 注册、Python 加载</td><td>与 MewCode 工具体系同一思路，简历可复用</td></tr>
+  <tr><td>中间件</td><td>Redis + MinIO + Nginx</td><td>缓存加速 / 原始文件 / 静态与反代</td></tr>
+</table>
+
+<h2 id="s2">2. 总体架构</h2>
+<figure class="figure">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 980" width="100%" role="img">
+  <title>知识库 + LangGraph Agent 系统推荐架构图</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <g font-family="system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+    <text x="600" y="54" text-anchor="middle" font-size="16" font-weight="500" fill="#18181B">知识库 + LangGraph Agent 系统推荐架构</text>
+    <text x="600" y="76" text-anchor="middle" font-size="12" fill="#71717A">技术选型配套架构图 · 2026-09-20</text>
+    <rect x="40" y="100" width="1120" height="76" rx="12" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+    <text x="60" y="128" font-size="13" font-weight="500" fill="#0C447C">客户端层</text>
+    <text x="60" y="148" font-size="11" fill="#378ADD">React 18 + Vite</text>
+    <g>
+      <rect x="200" y="116" width="220" height="44" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+      <text x="310" y="138" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#0C447C">文档管理</text>
+      <rect x="440" y="116" width="220" height="44" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+      <text x="550" y="138" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#0C447C">检索调试</text>
+      <rect x="680" y="116" width="220" height="44" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+      <text x="790" y="138" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#0C447C">Agent 对话</text>
+      <rect x="920" y="116" width="220" height="44" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+      <text x="1030" y="138" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#0C447C">Agent 工作流</text>
+    </g>
+    <path d="M600 176 L600 204" fill="none" stroke="#52525B" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <rect x="440" y="210" width="320" height="56" rx="10" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+    <text x="600" y="232" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#0C447C">Nginx 网关</text>
+    <text x="600" y="250" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#185FA5">静态资源 · 反向代理 /api</text>
+    <path d="M500 266 L320 326" fill="none" stroke="#52525B" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <path d="M700 266 L880 326" fill="none" stroke="#52525B" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <rect x="40" y="330" width="520" height="270" rx="14" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+    <text x="64" y="358" font-size="14" font-weight="500" fill="#085041">Java · Spring Boot 管理域</text>
+    <text x="64" y="378" font-size="11" fill="#0F6E56">模块化单体 · Maven 多模块（admin / common / api）</text>
+    <g>
+      <rect x="64" y="398" width="230" height="52" rx="8" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="179" y="419" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">文档管理服务</text>
+      <text x="179" y="437" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">上传 · 解析 · 分块</text>
+      <rect x="306" y="398" width="230" height="52" rx="8" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="421" y="419" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">数据源接入</text>
+      <text x="421" y="437" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">连接器 · 同步调度</text>
+      <rect x="64" y="460" width="230" height="52" rx="8" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="179" y="481" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">用户与权限</text>
+      <text x="179" y="499" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">RBAC · SSO 登录</text>
+      <rect x="306" y="460" width="230" height="52" rx="8" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="421" y="481" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">Skill 注册中心</text>
+      <text x="421" y="499" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">版本 · 启停 · 授权</text>
+      <rect x="64" y="522" width="230" height="52" rx="8" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="179" y="543" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">审计与配额</text>
+      <text x="179" y="561" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">操作日志 · 用量</text>
+      <rect x="306" y="522" width="230" height="52" rx="8" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="421" y="543" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">配置与字典</text>
+      <text x="421" y="561" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">系统参数 · 菜单</text>
+    </g>
+    <rect x="640" y="330" width="520" height="270" rx="14" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+    <text x="664" y="358" font-size="14" font-weight="500" fill="#26215C">Python · FastAPI AI 域</text>
+    <text x="664" y="378" font-size="11" fill="#534AB7">AI 能力核心 · 阶段一单体起步</text>
+    <g>
+      <rect x="664" y="398" width="230" height="52" rx="8" fill="#CECBF6" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="779" y="419" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#26215C">LangGraph 运行时</text>
+      <text x="779" y="437" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">5 节点状态机 · checkpoint</text>
+      <rect x="906" y="398" width="230" height="52" rx="8" fill="#CECBF6" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="1021" y="419" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#26215C">检索 Pipeline</text>
+      <text x="1021" y="437" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">BM25+向量 · RRF · 重排</text>
+      <rect x="664" y="460" width="230" height="52" rx="8" fill="#CECBF6" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="779" y="481" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#26215C">Agent 会话服务</text>
+      <text x="779" y="499" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">多轮上下文 · 流式输出</text>
+      <rect x="906" y="460" width="230" height="52" rx="8" fill="#CECBF6" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="1021" y="481" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#26215C">Model Provider</text>
+      <text x="1021" y="499" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">OpenAI 兼容 + Anthropic</text>
+      <rect x="664" y="522" width="230" height="52" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+      <text x="779" y="543" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#712B13">MCP Client</text>
+      <text x="779" y="561" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">stdio / SSE 接入</text>
+      <rect x="906" y="522" width="230" height="52" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+      <text x="1021" y="543" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#712B13">MCP Server</text>
+      <text x="1021" y="561" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">kb.search · kb.ingest · kb.list</text>
+    </g>
+    <text x="600" y="447" text-anchor="middle" font-size="11" fill="#71717A">REST / JSON</text>
+    <path d="M566 462 L634 462" fill="none" stroke="#52525B" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <path d="M634 484 L566 484" fill="none" stroke="#52525B" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <path d="M300 600 L300 646" fill="none" stroke="#52525B" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <path d="M900 600 L900 646" fill="none" stroke="#52525B" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <rect x="40" y="650" width="1120" height="110" rx="14" fill="#EAF3DE" stroke="#3B6D11" stroke-width="0.5"/>
+    <text x="60" y="678" font-size="13" font-weight="500" fill="#27500A">数据层</text>
+    <text x="60" y="698" font-size="11" fill="#3B6D11">统一数据栈</text>
+    <g>
+      <rect x="200" y="682" width="220" height="60" rx="8" fill="#C0DD97" stroke="#3B6D11" stroke-width="0.5"/>
+      <text x="310" y="706" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#27500A">PostgreSQL 17</text>
+      <text x="310" y="724" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#3B6D11">元数据 · JSONB · checkpoint</text>
+      <rect x="440" y="682" width="220" height="60" rx="8" fill="#C0DD97" stroke="#3B6D11" stroke-width="0.5"/>
+      <text x="550" y="706" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#27500A">Qdrant</text>
+      <text x="550" y="724" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#3B6D11">sparse+dense · RRF 混合检索</text>
+      <rect x="680" y="682" width="220" height="60" rx="8" fill="#C0DD97" stroke="#3B6D11" stroke-width="0.5"/>
+      <text x="790" y="706" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#27500A">Redis 7</text>
+      <text x="790" y="724" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#3B6D11">缓存 · 会话加速 · 队列</text>
+      <rect x="920" y="682" width="220" height="60" rx="8" fill="#C0DD97" stroke="#3B6D11" stroke-width="0.5"/>
+      <text x="1030" y="706" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#27500A">MinIO</text>
+      <text x="1030" y="724" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#3B6D11">原始文件 · 对象存储</text>
+    </g>
+    <path d="M600 760 L600 796" fill="none" stroke="#52525B" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <rect x="40" y="800" width="1120" height="86" rx="14" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+    <text x="60" y="828" font-size="13" font-weight="500" fill="#633806">模型层</text>
+    <text x="60" y="848" font-size="11" fill="#854F0B">统一抽象</text>
+    <g>
+      <rect x="200" y="816" width="290" height="54" rx="8" fill="#FAC775" stroke="#854F0B" stroke-width="0.5"/>
+      <text x="345" y="838" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#633806">OpenAI 兼容协议</text>
+      <text x="345" y="856" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#854F0B">Qwen · DeepSeek · GLM</text>
+      <rect x="525" y="816" width="290" height="54" rx="8" fill="#FAC775" stroke="#854F0B" stroke-width="0.5"/>
+      <text x="670" y="838" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#633806">Anthropic Messages</text>
+      <text x="670" y="856" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#854F0B">Claude 系列</text>
+      <rect x="850" y="816" width="290" height="54" rx="8" fill="#FAC775" stroke="#854F0B" stroke-width="0.5"/>
+      <text x="995" y="838" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#633806">BGE 本地服务</text>
+      <text x="995" y="856" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#854F0B">Embedding · Rerank（CPU/GPU）</text>
+    </g>
+    <g font-size="11" fill="#52525B">
+      <rect x="60" y="905" width="14" height="14" rx="3" fill="#B5D4F4"/>
+      <text x="82" y="912" dominant-baseline="central">客户端 / 网关</text>
+      <rect x="230" y="905" width="14" height="14" rx="3" fill="#9FE1CB"/>
+      <text x="252" y="912" dominant-baseline="central">管理域（Java）</text>
+      <rect x="430" y="905" width="14" height="14" rx="3" fill="#CECBF6"/>
+      <text x="452" y="912" dominant-baseline="central">AI 域（Python）</text>
+      <rect x="640" y="905" width="14" height="14" rx="3" fill="#C0DD97"/>
+      <text x="662" y="912" dominant-baseline="central">数据层</text>
+      <rect x="790" y="905" width="14" height="14" rx="3" fill="#FAC775"/>
+      <text x="812" y="912" dominant-baseline="central">模型层</text>
+      <rect x="930" y="905" width="14" height="14" rx="3" fill="#F5C4B3"/>
+      <text x="952" y="912" dominant-baseline="central">MCP 工具链</text>
+    </g>
+    <text x="600" y="950" text-anchor="middle" font-size="12" fill="#71717A">落地路线：① Python 单体 MVP → ② 抽离 Java 管理服务 → ③ MCP / Skill 完整化</text>
+  </g>
+</svg>
+<figcaption>图 1 · 系统推荐架构（客户端 → 网关 → 双服务域 → 数据层 → 模型层）</figcaption>
+</figure>
+<p><strong>请求流向</strong>：React 管理台 → Nginx（静态资源 + <code>/api</code> 反向代理）→ 双服务：<strong>Java · Spring Boot 管理域</strong>（文档 / 数据源 / 权限 / Skill 注册 / 审计）与 <strong>Python · FastAPI AI 域</strong>（LangGraph 运行时 / 检索 Pipeline / Agent 会话 / Model Provider / MCP），两服务间 REST/JSON 通信；数据层统一 PG + Qdrant + Redis + MinIO，模型层统一抽象 OpenAI 兼容 / Anthropic / BGE 本地。</p>
+
+<h2 id="s3">3. 语言选型：Java + Python 双服务</h2>
+<h3>3.1 为什么不是纯 Java</h3>
+<p>LangGraph 没有官方 Java 版本；LangChain4j 生态远弱于 Python 侧（检索组件、Rerank、社区模板均缺）。选纯 Java 等于自断 AI 主线，与求职方向相悖。</p>
+<h3>3.2 为什么不是纯 Python</h3>
+<p>权限、文档管理、审核流、数据源连接器这些管理后台能力，恰好是 Spring Boot 的主场，也是在职工位（CSF 框架 + AIFGW 网关）的直接技能迁移。纯 Python 会浪费这块优势。</p>
+<h3>3.3 混合架构的真实成本与对策</h3>
+<p>双服务 = 两套部署、两套依赖、跨服务联调。对策是<strong>分阶段演进</strong>（详见第 10 章）：先用 Python 单体跑通 AI 链路，再抽离 Java 管理服务，避免一开始就背上双服务运维负担。</p>
+
+<h2 id="s4">4. AI 框架：LangGraph + 多协议模型接入</h2>
+<h3>4.1 先澄清层次：这不是二选一</h3>
+<table>
+  <tr><th>层次</th><th>职责</th><th>本项目选择</th></tr>
+  <tr><td><strong>编排层</strong></td><td>决定先调谁、后调谁、怎么循环反思（流水线设计图）</td><td>LangGraph</td></tr>
+  <tr><td><strong>模型 API 层</strong></td><td>真正生成文字的大脑（流水线上的工人）</td><td>OpenAI 兼容协议 + Anthropic Messages</td></tr>
+</table>
+<h3>4.2 为什么 LangGraph 做骨架</h3>
+<ul>
+  <li>StateGraph + 条件边正好表达设计稿工作流页的 8 节点结构（意图路由 → 查询改写 → 混合检索 → 重排 → 生成 → 反思回环 ≤3 次）；</li>
+  <li>官方 PostgresSaver 提供生产级 checkpoint，支撑"暂停 / 重跑 / 断点续跑"（工作流页核心能力）；</li>
+  <li>法律 RAG Agent 项目（Recall@k 0.80）已验证过该技术栈，直接迁移。</li>
+</ul>
+<h3>4.3 模型接入：一套兼容协议 + 一个独立 Provider</h3>
+<ul>
+  <li><strong>OpenAI 兼容协议</strong>统一接 Qwen / DeepSeek / GLM——国内主流模型全部兼容，换模型只改 <code>base_url</code> + <code>api_key</code>；</li>
+  <li><strong>Anthropic Messages</strong> 作为第二协议独立 Provider；</li>
+  <li>该设计与 MewCode 的多 SDK 适配层（<code>client.py</code> + <code>serialization.py</code>）同构，实现经验直接复用——<strong>这是简历上"多协议适配能力"的第二个实证</strong>。</li>
+</ul>
+<h3>4.4 Embedding / Rerank</h3>
+<p>BGE 系列本地服务（bge-m3 embedding + bge-reranker），与法律 RAG 项目的 BM25 + BGE 混合检索方案一脉相承，数据不出内网。</p>
+
+<h2 id="s5">5. 管理系统：Spring Boot 模块化单体</h2>
+<h3>5.1 为什么不上 Spring Cloud</h3>
+<p>Spring Cloud 解决的是"很多服务谁来管"（注册中心、熔断、网关路由）。本项目 1 人维护 2 个服务，引入 Nacos / Gateway / Sentinel 只有维护成本没有收益。<strong>面试答法</strong>："服务数量不支撑拆分成本，我用 Maven 多模块保持未来可拆性——模块化单体是当前规模的最优解。"</p>
+<h3>5.2 Maven 多模块划分</h3>
+<table>
+  <tr><th style="width:200px">模块</th><th>职责</th></tr>
+  <tr><td><code>admin-web</code></td><td>Controller 层 + 登录鉴权入口</td></tr>
+  <tr><td><code>admin-service</code></td><td>文档 / 数据源 / 权限 / Skill 注册 / 审计 业务逻辑</td></tr>
+  <tr><td><code>common</code></td><td>实体、DTO、工具类（与 AI 域共享的契约放 API 包）</td></tr>
+  <tr><td><code>ai-api-client</code></td><td>暴露给 Python 侧的 REST 契约定义</td></tr>
+</table>
+
+<h2 id="s6">6. 向量数据库：Qdrant（不选 Milvus）</h2>
+<table>
+  <tr><th style="width:120px">维度</th><th>Qdrant ✅</th><th>Milvus</th></tr>
+  <tr><td>部署</td><td>单容器，内存占用小</td><td>etcd + MinIO + standalone，组件多、吃资源</td></tr>
+  <tr><td>混合检索</td><td><strong>原生 sparse + dense 向量 + RRF 融合</strong></td><td>需自行搭建方案</td></tr>
+  <tr><td>团队经验</td><td>法律 RAG 项目已实战 ✅</td><td>全新学习成本</td></tr>
+  <tr><td>适用规模</td><td>千万级向量以内</td><td>亿级、多副本生产集群</td></tr>
+</table>
+<p><strong>关键理由</strong>：Qdrant 原生 sparse vector + RRF 正好实现设计稿"检索调试"页的 BM25 + 向量策略切换——<strong>一个数据库搞定混合检索，不需要额外挂 Elasticsearch</strong>，架构更干净。本项目文档量级（百万级切片）远未触及 Qdrant 上限；如未来到亿级，迁移 Milvus 属于存储层替换，接口层隔离后成本可控。</p>
+
+<h2 id="s7">7. 主数据库：PostgreSQL（为什么不是 MySQL）</h2>
+<p>MySQL 对纯 CRUD 管理后台完全够用，且与既有 Java 技术栈（MyBatis / RuoYi）最顺手。但本项目 <strong>AI 域是主角</strong>，PG 在四个生态位上全面占优：</p>
+<table>
+  <tr><th style="width:160px">维度</th><th>PostgreSQL</th><th>MySQL</th></tr>
+  <tr><td>JSON 能力</td><td>JSONB 可索引、可查内部字段（GIN）</td><td>JSON 能存，查询/索引能力弱</td></tr>
+  <tr><td>向量扩展</td><td>pgvector 官方插件</td><td>无官方方案</td></tr>
+  <tr><td>LangGraph checkpoint</td><td><strong>PostgresSaver 为官方生产级后端</strong></td><td>需自研</td></tr>
+  <tr><td>中文全文检索</td><td>tsvector + 中文分词插件</td><td>几乎不可用（按空格分词）</td></tr>
+  <tr><td>DDL 事务</td><td>可回滚，schema 迁移安全</td><td>DDL 隐式提交</td></tr>
+</table>
+<p><strong>三个具体落点</strong>：</p>
+<ol>
+  <li><strong>Agent 动态配置用 JSONB</strong>——工作流节点参数、Skill 包结构灵活多变，可直接按内部字段查询：</li>
+</ol>
+<pre><code>-- JSONB 直接按内部字段查询，还能走 GIN 索引
+SELECT * FROM agents
+WHERE config @&gt; '{"tools": ["kb.search"]}';</code></pre>
+<ol start="2">
+  <li><strong>LangGraph checkpoint 官方标准后端就是 Postgres</strong>（Redis 只做缓存加速层），社区模板全按 PG 写；</li>
+  <li><strong>pgvector 提供轻量向量兜底</strong>——联调环境可不起 Qdrant。</li>
+</ol>
+<p><strong>统一收益</strong>：管理域 + AI 域连同一个 PG，避免"Java 连 MySQL、Python 连 PG"的双数据库心智负担。</p>
+
+<h2 id="s8">8. Skill 与 MCP 设计</h2>
+<h3>8.1 MCP：知识库能力工具化</h3>
+<p>AI 域内置 MCP Server，暴露三个工具，Agent 对话经 MCP Client 调用——知识库对 Agent 即"即插即用的工具"，与 MewCode 的 9 类工具体系同一思路：</p>
+<table>
+  <tr><th style="width:280px">工具</th><th>功能</th><th style="width:140px">对应设计稿</th></tr>
+  <tr><td><code>kb.search(query, top_k, strategy)</code></td><td>混合检索（BM25/向量/RRF 可选）</td><td>检索调试页</td></tr>
+  <tr><td><code>kb.ingest(doc_id)</code></td><td>触发解析 → 分块 → 向量化入库</td><td>文档列表页</td></tr>
+  <tr><td><code>kb.list(filter)</code></td><td>列出知识库文档元数据</td><td>知识库概览页</td></tr>
+</table>
+<h3>8.2 Skill：提示词模板 + 工具组合包</h3>
+<ul>
+  <li><strong>定义</strong>：一个 Skill = 特定 system prompt + 预挂载工具 + 输出格式约束（例："法律文书起草" = 法务 prompt + 自动挂 <code>kb.search</code> + 文书格式 schema）；</li>
+  <li><strong>分工</strong>：Java 管理域负责注册 / 版本 / 启停 / 授权（Skill 注册中心），Python 运行时按需加载执行；</li>
+  <li><strong>对应设计稿</strong>：Agent 创建页的"新建 Agent"即选择类型 + 挂载 Skill 的流程。</li>
+</ul>
+
+<h2 id="s9">9. 数据层与中间件清单</h2>
+<table>
+  <tr><th>组件</th><th>版本</th><th>用途</th><th>部署</th></tr>
+  <tr><td>PostgreSQL</td><td>17</td><td>元数据 / JSONB 配置 / LangGraph checkpoint / pgvector 兜底</td><td>Docker 单容器</td></tr>
+  <tr><td>Qdrant</td><td>≥1.10</td><td>向量存储 + sparse/dense/RRF 混合检索</td><td>Docker 单容器</td></tr>
+  <tr><td>Redis</td><td>7</td><td>缓存、会话加速、轻量队列</td><td>Docker 单容器</td></tr>
+  <tr><td>MinIO</td><td>最新</td><td>原始文档对象存储</td><td>Docker 单容器</td></tr>
+  <tr><td>Nginx</td><td>stable</td><td>静态资源 + <code>/api</code> 反向代理</td><td>Docker 单容器</td></tr>
+</table>
+
+<h2 id="s12">12. 三阶段落地路线</h2>
+<table>
+  <tr><th style="width:170px">阶段</th><th>范围</th><th>交付物</th><th>验证标准</th></tr>
+  <tr><td><strong>① Python 单体 MVP</strong></td><td>FastAPI 全包：检索 Pipeline + Agent 对话 + 简化文档上传；PG + Qdrant</td><td>可演示的对话与检索闭环</td><td>检索 Recall@k ≥ 0.75；多轮对话带引用</td></tr>
+  <tr><td><strong>② 抽离 Java 管理服务</strong></td><td>文档 / 数据源 / 权限 / 审计迁至 Spring Boot；Nginx 组网</td><td>双服务架构 + React 管理台</td><td>设计稿 8 页功能全部走通</td></tr>
+  <tr><td><strong>③ MCP / Skill 完整化</strong></td><td>MCP Server 工具化、Skill 注册与加载、Agent 工作流编排页能力</td><td>Agent 平台闭环</td><td>工作流可拖拽配置并 checkpoint 重跑</td></tr>
+</table>
+<p><strong>渐进原则</strong>：每阶段都是可运行的完整系统，避免"大爆炸式"重构。</p>
+
+<h2 id="s11">11. 风险与备选方案</h2>
+<table>
+  <tr><th>风险</th><th style="width:80px">概率</th><th>应对</th></tr>
+  <tr><td>双服务联调成本超预期</td><td>中</td><td>阶段①保持单体；服务间契约先行（<code>ai-api-client</code>）</td></tr>
+  <tr><td>Qdrant 规模触顶</td><td>低</td><td>检索接口层隔离，按需迁 Milvus</td></tr>
+  <tr><td>LangGraph API 变动</td><td>中</td><td>锁定版本 + 薄封装层隔离</td></tr>
+  <tr><td>国内模型兼容性差异</td><td>低</td><td>兼容协议层做参数映射表（MewCode 序列化层经验）</td></tr>
+</table>
+
+<h2 id="sa">附 A：面试话术</h2>
+<blockquote>"选型上我做了三个明确取舍：一是 Java + Python 分域——管理域用 Spring Boot 承接企业级治理能力，AI 域用 FastAPI + LangGraph 承接生态；二是管理域坚持模块化单体不上 Spring Cloud，因为服务数量不支撑拆分成本，用 Maven 多模块保留可拆性；三是数据层选 Qdrant + PostgreSQL——Qdrant 原生 sparse/dense + RRF 一个库实现混合检索，PG 则因为 LangGraph 官方 checkpoint 后端和 JSONB 的 AI 生态位。整个方案每一步都建立在我做过的法律 RAG Agent 和 MewCode 多协议适配的实战经验上。"</blockquote>
+
+<h2 id="sb">附 B：与简历项目的衔接</h2>
+<table>
+  <tr><th style="width:280px">简历项目</th><th>本项目复用点</th></tr>
+  <tr><td>法律 RAG Agent（Recall@k 0.80）</td><td>BM25 + BGE 混合检索、Parent-Child 分块、LangGraph 状态机</td></tr>
+  <tr><td>MewCode（AI 编程助手）</td><td>多 SDK 协议适配层 → Model Provider 设计；9 类工具 → MCP 工具化；文件式记忆 → checkpoint 方案</td></tr>
+  <tr><td>智能工厂 MES（Spring Boot）</td><td>管理域 Spring Boot 工程实践直接迁移</td></tr>
+</table>
+
+<footer>知识库 + LangGraph Agent 系统 · 技术选型文档 v1.0 · 2026-09-20</footer>
+</div>
+</body>
+</html>

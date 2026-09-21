@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 980" width="100%" role="img">
+  <title>知识库 + LangGraph Agent 系统推荐架构图</title>
+  <desc>分层架构：客户端层 React 管理台 → Nginx 网关 → Java Spring Boot 管理域 与 Python FastAPI AI 域 → 数据层 PostgreSQL/Qdrant/Redis/MinIO → 模型层 OpenAI 兼容/Anthropic/BGE 本地</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <g font-family="system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+    <text x="600" y="54" text-anchor="middle" font-size="16" font-weight="500" fill="#18181B">知识库 + LangGraph Agent 系统推荐架构</text>
+    <text x="600" y="76" text-anchor="middle" font-size="12" fill="#71717A">技术选型配套架构图 · 2026-09-20</text>
+
+    <rect x="40" y="100" width="1120" height="76" rx="12" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+    <text x="60" y="128" font-size="13" font-weight="500" fill="#0C447C">客户端层</text>
+    <text x="60" y="148" font-size="11" fill="#378ADD">React 18 + Vite</text>
+    <g>
+      <rect x="200" y="116" width="220" height="44" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+      <text x="310" y="138" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#0C447C">文档管理</text>
+      <rect x="440" y="116" width="220" height="44" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+      <text x="550" y="138" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#0C447C">检索调试</text>
+      <rect x="680" y="116" width="220" height="44" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+      <text x="790" y="138" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#0C447C">Agent 对话</text>
+      <rect x="920" y="116" width="220" height="44" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+      <text x="1030" y="138" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#0C447C">Agent 工作流</text>
+    </g>
+
+    <path d="M600 176 L600 204" fill="none" stroke="#52525B" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <rect x="440" y="210" width="320" height="56" rx="10" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+    <text x="600" y="232" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#0C447C">Nginx 网关</text>
+    <text x="600" y="250" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#185FA5">静态资源 · 反向代理 /api</text>
+
+    <path d="M500 266 L320 326" fill="none" stroke="#52525B" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <path d="M700 266 L880 326" fill="none" stroke="#52525B" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="40" y="330" width="520" height="270" rx="14" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+    <text x="64" y="358" font-size="14" font-weight="500" fill="#085041">Java · Spring Boot 管理域</text>
+    <text x="64" y="378" font-size="11" fill="#0F6E56">模块化单体 · Maven 多模块（admin / common / api）</text>
+    <g>
+      <rect x="64" y="398" width="230" height="52" rx="8" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="179" y="419" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">文档管理服务</text>
+      <text x="179" y="437" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">上传 · 解析 · 分块</text>
+      <rect x="306" y="398" width="230" height="52" rx="8" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="421" y="419" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">数据源接入</text>
+      <text x="421" y="437" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">连接器 · 同步调度</text>
+      <rect x="64" y="460" width="230" height="52" rx="8" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="179" y="481" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">用户与权限</text>
+      <text x="179" y="499" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">RBAC · SSO 登录</text>
+      <rect x="306" y="460" width="230" height="52" rx="8" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="421" y="481" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">Skill 注册中心</text>
+      <text x="421" y="499" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">版本 · 启停 · 授权</text>
+      <rect x="64" y="522" width="230" height="52" rx="8" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="179" y="543" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">审计与配额</text>
+      <text x="179" y="561" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">操作日志 · 用量</text>
+      <rect x="306" y="522" width="230" height="52" rx="8" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="421" y="543" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">配置与字典</text>
+      <text x="421" y="561" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">系统参数 · 菜单</text>
+    </g>
+
+    <rect x="640" y="330" width="520" height="270" rx="14" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+    <text x="664" y="358" font-size="14" font-weight="500" fill="#26215C">Python · FastAPI AI 域</text>
+    <text x="664" y="378" font-size="11" fill="#534AB7">AI 能力核心 · 阶段一单体起步</text>
+    <g>
+      <rect x="664" y="398" width="230" height="52" rx="8" fill="#CECBF6" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="779" y="419" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#26215C">LangGraph 运行时</text>
+      <text x="779" y="437" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">5 节点状态机 · checkpoint</text>
+      <rect x="906" y="398" width="230" height="52" rx="8" fill="#CECBF6" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="1021" y="419" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#26215C">检索 Pipeline</text>
+      <text x="1021" y="437" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">BM25+向量 · RRF · 重排</text>
+      <rect x="664" y="460" width="230" height="52" rx="8" fill="#CECBF6" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="779" y="481" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#26215C">Agent 会话服务</text>
+      <text x="779" y="499" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">多轮上下文 · 流式输出</text>
+      <rect x="906" y="460" width="230" height="52" rx="8" fill="#CECBF6" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="1021" y="481" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#26215C">Model Provider</text>
+      <text x="1021" y="499" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">OpenAI 兼容 + Anthropic</text>
+      <rect x="664" y="522" width="230" height="52" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+      <text x="779" y="543" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#712B13">MCP Client</text>
+      <text x="779" y="561" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">stdio / SSE 接入</text>
+      <rect x="906" y="522" width="230" height="52" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+      <text x="1021" y="543" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#712B13">MCP Server</text>
+      <text x="1021" y="561" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">kb.search · kb.ingest · kb.list</text>
+    </g>
+
+    <text x="600" y="447" text-anchor="middle" font-size="11" fill="#71717A">REST / JSON</text>
+    <path d="M566 462 L634 462" fill="none" stroke="#52525B" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <path d="M634 484 L566 484" fill="none" stroke="#52525B" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <path d="M300 600 L300 646" fill="none" stroke="#52525B" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <path d="M900 600 L900 646" fill="none" stroke="#52525B" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="40" y="650" width="1120" height="110" rx="14" fill="#EAF3DE" stroke="#3B6D11" stroke-width="0.5"/>
+    <text x="60" y="678" font-size="13" font-weight="500" fill="#27500A">数据层</text>
+    <text x="60" y="698" font-size="11" fill="#3B6D11">统一数据栈</text>
+    <g>
+      <rect x="200" y="682" width="220" height="60" rx="8" fill="#C0DD97" stroke="#3B6D11" stroke-width="0.5"/>
+      <text x="310" y="706" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#27500A">PostgreSQL 17</text>
+      <text x="310" y="724" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#3B6D11">元数据 · JSONB · checkpoint</text>
+      <rect x="440" y="682" width="220" height="60" rx="8" fill="#C0DD97" stroke="#3B6D11" stroke-width="0.5"/>
+      <text x="550" y="706" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#27500A">Qdrant</text>
+      <text x="550" y="724" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#3B6D11">sparse+dense · RRF 混合检索</text>
+      <rect x="680" y="682" width="220" height="60" rx="8" fill="#C0DD97" stroke="#3B6D11" stroke-width="0.5"/>
+      <text x="790" y="706" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#27500A">Redis 7</text>
+      <text x="790" y="724" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#3B6D11">缓存 · 会话加速 · 队列</text>
+      <rect x="920" y="682" width="220" height="60" rx="8" fill="#C0DD97" stroke="#3B6D11" stroke-width="0.5"/>
+      <text x="1030" y="706" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#27500A">MinIO</text>
+      <text x="1030" y="724" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#3B6D11">原始文件 · 对象存储</text>
+    </g>
+
+    <path d="M600 760 L600 796" fill="none" stroke="#52525B" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="40" y="800" width="1120" height="86" rx="14" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+    <text x="60" y="828" font-size="13" font-weight="500" fill="#633806">模型层</text>
+    <text x="60" y="848" font-size="11" fill="#854F0B">统一抽象</text>
+    <g>
+      <rect x="200" y="816" width="290" height="54" rx="8" fill="#FAC775" stroke="#854F0B" stroke-width="0.5"/>
+      <text x="345" y="838" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#633806">OpenAI 兼容协议</text>
+      <text x="345" y="856" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#854F0B">Qwen · DeepSeek · GLM</text>
+      <rect x="525" y="816" width="290" height="54" rx="8" fill="#FAC775" stroke="#854F0B" stroke-width="0.5"/>
+      <text x="670" y="838" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#633806">Anthropic Messages</text>
+      <text x="670" y="856" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#854F0B">Claude 系列</text>
+      <rect x="850" y="816" width="290" height="54" rx="8" fill="#FAC775" stroke="#854F0B" stroke-width="0.5"/>
+      <text x="995" y="838" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#633806">BGE 本地服务</text>
+      <text x="995" y="856" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#854F0B">Embedding · Rerank（CPU/GPU）</text>
+    </g>
+
+    <g font-size="11" fill="#52525B">
+      <rect x="60" y="905" width="14" height="14" rx="3" fill="#B5D4F4"/>
+      <text x="82" y="912" dominant-baseline="central">客户端 / 网关</text>
+      <rect x="230" y="905" width="14" height="14" rx="3" fill="#9FE1CB"/>
+      <text x="252" y="912" dominant-baseline="central">管理域（Java）</text>
+      <rect x="430" y="905" width="14" height="14" rx="3" fill="#CECBF6"/>
+      <text x="452" y="912" dominant-baseline="central">AI 域（Python）</text>
+      <rect x="640" y="905" width="14" height="14" rx="3" fill="#C0DD97"/>
+      <text x="662" y="912" dominant-baseline="central">数据层</text>
+      <rect x="790" y="905" width="14" height="14" rx="3" fill="#FAC775"/>
+      <text x="812" y="912" dominant-baseline="central">模型层</text>
+      <rect x="930" y="905" width="14" height="14" rx="3" fill="#F5C4B3"/>
+      <text x="952" y="912" dominant-baseline="central">MCP 工具链</text>
+    </g>
+    <text x="600" y="950" text-anchor="middle" font-size="12" fill="#71717A">落地路线：① Python 单体 MVP → ② 抽离 Java 管理服务 → ③ MCP / Skill 完整化</text>
+  </g>
+</svg>

@@ -1,0 +1,28 @@
+# ---- 环境密钥（只提交 .env.example）----
+.env
+.env.*
+!.env.example
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_tmp/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ---- Node / 前端 ----
+node_modules/
+dist/
+*.local
+
+# ---- 编辑器 / 系统 ----
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# ---- 参考用第三方浅克隆（非项目代码，不进仓库）----
+pixso-ai-integration/
