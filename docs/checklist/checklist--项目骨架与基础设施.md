@@ -10,7 +10,7 @@
 ## A. 仓库与门禁（T1）
 
 - [x] `git clone` 到干净目录成功，仓库含 `backend/` `frontend/` `docs/` `docker-compose.yml`
-- [ ] `pre-commit install` 后，提交一个含 ruff 错误的 Python 文件**被拦截**（钩子已装并全绿，负样例待人工触发一次）
+- [x] `pre-commit install` 后，提交一个含 ruff 错误的 Python 文件**被拦截**——2026-09-21 实测：提交含 `import os` 的 `bad.py` 被 ruff 拦下并自动修复，确认门禁生效
 - [x] `.env` 在 `.gitignore` 中，`git status` 看不到它；`.env.example` 已提交
 
 ## B. 后端工程（T2–T5）
@@ -42,5 +42,5 @@
 
 - [x] `cd frontend && pnpm i && pnpm dev` 后可访问 `http://localhost:5173`——`/login` 返回 200（修复了 pnpm12 干净机 install 报错）
 - [x] `pnpm lint` 零报错；`pnpm build` 成功
-- [ ] `/login` 页面与 Pixso 设计稿登录页并排对照：布局、配色、间距一致——需人工对照设计稿
+- [x] `/login` 页面与 Pixso 设计稿登录页并排对照：布局、配色、间距一致——2026-09-21 用户人工对照一致
 - [x] 登录表单空提交出现必填校验提示；填写后提交走 mock（不请求后端）——AntD Form 规则 + mock 提交代码就位
